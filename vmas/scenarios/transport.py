@@ -17,11 +17,13 @@ class Scenario(BaseScenario):
         self.package_width = kwargs.get("package_width", 0.15)
         self.package_length = kwargs.get("package_length", 0.15)
         self.package_mass = kwargs.get("package_mass", 50)
-
+        self.n_passages = kwargs.get("n_passages", 1)
+        assert self.n_passages >= 1 and self.n_passages <= 20
         self.shaping_factor = 100
-
+        self.passage_width = 0.2
+        self.passage_length = 0.103
         # Make world
-        world = World(batch_dim, device)
+        world = World(batch_dim, device, x_semidim=1, y_semidim=1)
         # Add agents
         for i in range(n_agents):
             agent = Agent(name=f"agent {i}", shape=Sphere(0.03), u_multiplier=0.6)
@@ -47,7 +49,19 @@ class Scenario(BaseScenario):
             package.goal = goal
             self.packages.append(package)
             world.add_landmark(package)
-
+        for i in range(
+            int((2 * world.x_semidim + 2 * self.agent_radius) // self.passage_length)
+        ):
+            removed = i < self.n_passages
+            passage = Landmark(
+                name=f"passage {i}",
+                collide=not removed,
+                movable=False,
+                shape=Box(length=self.passage_length, width=self.passage_width),
+                color=Color.RED,
+                collision_filter=lambda e: not isinstance(e.shape, Box),
+            )
+            world.add_landmark(passage)
         return world
 
     def reset_world_at(self, env_index: int = None):
