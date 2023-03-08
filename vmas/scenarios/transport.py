@@ -4,7 +4,7 @@
 
 import torch
 from vmas import render_interactively
-from vmas.simulator.core import Agent, Box, Landmark, Sphere, World
+from vmas.simulator.core import Agent, Box, Landmark, Sphere, World, Line
 from vmas.simulator.heuristic_policy import BaseHeuristicPolicy
 from vmas.simulator.scenario import BaseScenario
 from vmas.simulator.utils import Color
