@@ -13,6 +13,9 @@ class Scenario(BaseScenario):
         self.package_width = kwargs.get("package_width", 0.15)
         self.package_length = kwargs.get("package_length", 0.15)
         self.package_mass = kwargs.get("package_mass", 50)
+        self.n_passages = kwargs.get("n_passages", 1)
+        self.passage_width = 0.2
+        self.passage_length = 0.103
 
         self.shaping_factor = 100
 
@@ -23,6 +26,20 @@ class Scenario(BaseScenario):
             agent = Agent(name=f"agent {i}", shape=Sphere(0.03), u_multiplier=0.6)
             world.add_agent(agent)
         # Add landmarks
+        for i in range(
+            int((2 * world.x_semidim + 2 * self.agent_radius) // self.passage_length)
+        ):
+            removed = i < self.n_passages
+            passage = Landmark(
+                name=f"passage {i}",
+                collide=not removed,
+                movable=False,
+                shape=Box(length=self.passage_length, width=self.passage_width),
+                color=Color.RED,
+                collision_filter=lambda e: not isinstance(e.shape, Box),
+            )
+            world.add_landmark(passage)
+            
         goal = Landmark(
             name="goal",
             collide=False,
@@ -122,7 +139,24 @@ class Scenario(BaseScenario):
                         ),
                         batch_index=env_index,
                     )
-
+        passages = [self.world.landmarks[self.n_agents :][i] for i in order]
+        for i, passage in enumerate(passages):
+            if not passage.collide:
+                passage.is_rendering[:] = False
+            passage.set_pos(
+                torch.tensor(
+                    [
+                        -1
+                        - self.agent_radius
+                        + self.passage_length / 2
+                        + self.passage_length * i,
+                        0.0,
+                    ],
+                    dtype=torch.float32,
+                    device=self.world.device,
+                ),
+                batch_index=env_index,
+            )
     def reward(self, agent: Agent):
         is_first = agent == self.world.agents[0]
 
